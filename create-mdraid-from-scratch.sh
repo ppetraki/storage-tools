@@ -1,5 +1,5 @@
 #!/bin/bash
-# Author: Peter M. Petrakis
+#Author: Peter M. Petrakis <peter.petrakis@gmail.com>
 
 raid_chunk=32
 
