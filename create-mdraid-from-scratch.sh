@@ -52,15 +52,17 @@ echo "executiing mdadm"
 set -x
 mdadm --create /dev/md0 -v --raid-devices=$count \
       --level=raid10 \
+      --bitmap=internal \
       --chunk=$raid_chunk \
       ${members}
 set +x
 
 sleep 5
 
-echo "building /etc/mdadm.conf"
+conf=/etc/mdadm/mdadm.conf
+echo "building $conf"
 uuid=$(mdadm -D /dev/md0  | sed -En 's/UUID : (.+)/\1/p' | head -n1 | tr -d ' ')
-cat > /etc/mdadm.conf << EOF
+cat > $conf << EOF
 # mdadm.conf
 #
 # Please refer to mdadm.conf(5) for information about this file.
@@ -82,5 +84,12 @@ MAILADDR root
 # definitions of existing MD arrays
 ARRAY /dev/md0 level=raid10 num-devices=$count UUID=$uuid
 EOF
-echo "please review /etc/mdadm.conf"
+echo "please review $conf"
+
+# XXX need sed magic for /etc/defaults/grub.conf to append arg
+echo "XXX add scsi_mod.scan=sync to grub.conf and update-grub"
+
+echo "copying mdadm config to initrd"
+update-initramfs -u -k all
+
 echo "done."
