@@ -3,6 +3,11 @@
 
 raid_chunk=32
 
+if ! lsb_release -d | grep -q Ubuntu; then
+  echo "Only supported on Ubuntu"
+  exit 1
+fi
+
 echo "WARNING: proceeding will nuke the SAS disks and create RAID from scratch: [y/n]"
 read -p "Continue (y/n)?" choice
 
@@ -86,10 +91,15 @@ ARRAY /dev/md0 level=raid10 num-devices=$count UUID=$uuid
 EOF
 echo "please review $conf"
 
-# XXX need sed magic for /etc/defaults/grub.conf to append arg
-echo "XXX add scsi_mod.scan=sync to grub.conf and update-grub"
+echo "add scsi_mod.scan=sync to grub.conf and update-grub"
+grub='/etc/default/grub'
+if ! grep -q scsi_mod.scan=sync $grub; then
+  sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT\)="\(.*\)"\(.*\)/\1="\2 scsi_mod.scan=sync"/' $grub
+fi
+update-grub
 
 echo "copying mdadm config to initrd"
 update-initramfs -u -k all
 
 echo "done."
+# vim:ts=2:sw=2:et:
